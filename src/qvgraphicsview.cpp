@@ -160,19 +160,20 @@ bool QVGraphicsView::event(QEvent *event)
 
 void QVGraphicsView::wheelEvent(QWheelEvent *event)
 {
-    //Basically, if you are holding ctrl then it scrolls instead of zooms (the shift bit is for horizontal scrolling)
+    // Holding Ctrl/Meta -> Zoom
+    // Holding Alt  -> V Scroll
+    // Holding Shift+Alt -> H Scroll
+    // Else goto prev/next file
     bool mode = isScrollZoomsEnabled;
-    if (event->modifiers() == Qt::ControlModifier || event->modifiers() == (Qt::ControlModifier | Qt::ShiftModifier))
-        mode = !mode;
 
-    if (mode)
+    if (mode && (event->modifiers() == Qt::ControlModifier || event->modifiers() == Qt::MetaModifier))
     {
         if (event->angleDelta().y() == 0)
             zoom(event->angleDelta().x(), event->pos());
         else
             zoom(event->angleDelta().y(), event->pos());
     }
-    else
+    else if (event->modifiers() == Qt::AltModifier || event->modifiers() == (Qt::AltModifier | Qt::ShiftModifier))
     {
         //macos automatically scrolls horizontally while holding shift
         #ifndef Q_OS_MACX
@@ -181,6 +182,13 @@ void QVGraphicsView::wheelEvent(QWheelEvent *event)
         else
         #endif
             translate(event->angleDelta().x()/2, event->angleDelta().y()/2);
+    }
+    else
+    {
+        if (event->angleDelta().x() < 0 || event->angleDelta().y() < 0)
+            goToFile(QVGraphicsView::goToFileMode::next);
+        else
+            goToFile(QVGraphicsView::goToFileMode::previous);
     }
 }
 
